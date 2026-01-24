@@ -5,11 +5,8 @@ PATCHBAY is intended to run reliably inside a pinned conda environment.
 ## Known-good environment
 
 The file `conda_list_paketliste.txt` is a snapshot of a working environment
-(created via `conda list`). Use it as a reference for what is known to work on
-your machine.
+(created via `conda list`). Use it as a reference for what is known to work.
 
-> Tip: If you want, we can generate an `environment.yml` from that snapshot in a
-> follow-up step.
 
 ## From source
 
