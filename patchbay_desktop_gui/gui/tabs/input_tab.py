@@ -60,7 +60,9 @@ def build_tab_input(self: "MainWindow") -> None:
                     self._build_marker_controls(show_label=False)
 
                 dpg.add_separator()
-                with dpg.child_window(border=True, height=-1, width=-1):
+                # The Anchors panel itself should not scroll.
+                # Only the anchors *table* becomes scrollable (inside _build_anchor_table).
+                with dpg.child_window(border=True, height=-1, width=-1, no_scrollbar=True, no_scroll_with_mouse=True):
                     dpg.add_text("Anchors")
                     self._build_anchor_table(width=-1, height=-1)
 

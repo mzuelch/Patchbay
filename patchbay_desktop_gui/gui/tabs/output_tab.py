@@ -100,8 +100,6 @@ def build_tab_output(self: "MainWindow") -> None:
                     )
                     self.tags["residual_path"] = dpg.add_text("")
 
-                self._build_output_history_controls(kind="residual")
-
                 with dpg.group() as rg:
                     # Waveform (fixed 0 dBFS full-scale), then transport controls underneath.
                     self.wave_residual.build(parent=rg, height=240)

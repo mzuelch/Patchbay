@@ -1993,31 +1993,40 @@ class MainWindow:
             the available horizontal space.
         """
         dpg = self.dpg
-        self.tags["anchor_table"] = dpg.add_child_window(width=width, height=height, border=True)
-        with dpg.group(parent=self.tags["anchor_table"]):
-            # Anchor strategy selection (persistent).
-            #
-            # This control used to live in the modal "Options" window. It is now
-            # located here next to the anchor list, because it directly affects
-            # how anchors are applied during chunking.
-            with dpg.group(horizontal=True):
-                dpg.add_text("Anchor mode")
-                self.tags["anchor_mode_combo"] = dpg.add_combo(
-                    items=list(ANCHOR_MODE_CHOICES),
-                    default_value=str(self.state.anchor_mode),
-                    width=220,
-                    callback=self._on_anchor_mode_changed,
-                )
-                self.tags["anchor_mode_desc"] = dpg.add_text(anchor_mode_shortdesc(str(self.state.anchor_mode)))
-            dpg.add_spacer(height=4)
-            with dpg.table(header_row=True, resizable=True, policy=dpg.mvTable_SizingStretchProp):
-                dpg.add_table_column(label="Type", width_fixed=True, init_width_or_weight=40)
-                dpg.add_table_column(label="Start (s)")
-                dpg.add_table_column(label="Stop (s)")
-                self.tags["anchor_rows"] = dpg.add_table_row()  # placeholder; we rebuild table content
+
+        # Anchor mode toolbar (non-scroll)
+        # ------------------------------
+        # The user requested that only the *table* is scrollable and that the
+        # action buttons stay visible. We therefore keep the anchor mode
+        # selector outside the scroll area.
+        with dpg.group(horizontal=True):
+            dpg.add_text("Anchor mode")
+            self.tags["anchor_mode_combo"] = dpg.add_combo(
+                items=list(ANCHOR_MODE_CHOICES),
+                default_value=str(self.state.anchor_mode),
+                width=220,
+                callback=self._on_anchor_mode_changed,
+            )
+            self.tags["anchor_mode_desc"] = dpg.add_text(anchor_mode_shortdesc(str(self.state.anchor_mode)))
+
+        dpg.add_spacer(height=4)
+
+        # Scroll area for the anchors table
+        # --------------------------------
+        # If the caller uses height=-1 (fill), we reserve some pixels for the
+        # fixed bottom action buttons.
+        table_h = int(height)
+        if table_h == -1:
+            table_h = -44
+
+        self.tags["anchor_table"] = dpg.add_child_window(width=width, height=table_h, border=True)
+
+        # Fixed action buttons (always visible)
+        dpg.add_spacer(height=6)
         with dpg.group(horizontal=True):
             dpg.add_button(label="Delete selected", callback=lambda s, a, u=None: self._delete_selected_anchor())
             dpg.add_button(label="Clear all", callback=lambda s, a, u=None: self._clear_all_anchors())
+
         self.tags["anchor_selected_index"] = None
         self._refresh_anchor_table()
 
@@ -2426,76 +2435,57 @@ class MainWindow:
         self._set_status(f"Added anchor {sign}: {s:.2f}s..{e:.2f}s")
 
     def _refresh_anchor_table(self) -> None:
-        """Refresh the anchors table *and* the anchor-mode selector.
+        """Refresh the anchors table.
 
-        Important
-        ---------
-        The anchor table lives inside a scrollable child window. Earlier
-        iterations refreshed the table by clearing the entire child window and
-        rebuilding only the table rows.
+        Notes
+        -----
+        The user requested that only the *table* is scrollable while the
+        action buttons remain visible. We therefore keep the anchor-mode
+        selector and the action buttons *outside* the scrollable child window.
 
-        Since the *anchor mode* selector is located **next to the anchor list**
-        (and is stored inside the same child window), clearing the child window
-        would also delete the selector, making it disappear after the first
-        refresh (e.g. after loading an input file).
-
-        This method therefore rebuilds the complete content of the anchors
-        child window: selector + table.
+        This method only rebuilds the table content inside the scroll area.
         """
         dpg = self.dpg
         if "anchor_table" not in self.tags:
             return
 
+        # Keep the anchor-mode UI in sync (best-effort).
+        try:
+            if "anchor_mode_combo" in self.tags:
+                dpg.set_value(self.tags["anchor_mode_combo"], str(self.state.anchor_mode))
+            if "anchor_mode_desc" in self.tags:
+                dpg.set_value(self.tags["anchor_mode_desc"], anchor_mode_shortdesc(str(self.state.anchor_mode)))
+        except Exception:
+            pass
+
         # Clear only the children of the anchor table container.
         dpg.delete_item(self.tags["anchor_table"], children_only=True)
 
-        with dpg.group(parent=self.tags["anchor_table"]):
-            # Anchor strategy selection (persistent).
-            with dpg.group(horizontal=True):
-                dpg.add_text("Anchor mode")
-                self.tags["anchor_mode_combo"] = dpg.add_combo(
-                    items=list(ANCHOR_MODE_CHOICES),
-                    default_value=str(self.state.anchor_mode),
-                    width=220,
-                    callback=self._on_anchor_mode_changed,
-                )
-                self.tags["anchor_mode_desc"] = dpg.add_text(anchor_mode_shortdesc(str(self.state.anchor_mode)))
+        with dpg.table(parent=self.tags["anchor_table"], header_row=True, resizable=True, policy=dpg.mvTable_SizingStretchProp):
+            dpg.add_table_column(label="#", width_fixed=True, init_width_or_weight=30)
+            dpg.add_table_column(label="Type", width_fixed=True, init_width_or_weight=40)
+            dpg.add_table_column(label="Start (s)")
+            dpg.add_table_column(label="Stop (s)")
 
-            dpg.add_spacer(height=4)
-
-            with dpg.table(header_row=True, resizable=True, policy=dpg.mvTable_SizingStretchProp):
-                dpg.add_table_column(label="#", width_fixed=True, init_width_or_weight=30)
-                dpg.add_table_column(label="Type", width_fixed=True, init_width_or_weight=40)
-                dpg.add_table_column(label="Start (s)")
-                dpg.add_table_column(label="Stop (s)")
-
-                for idx, a in enumerate(self.state.anchors):
-                    with dpg.table_row():
-                        # Use a small selectable in the first column to
-                        # implement selection without hiding the other
-                        # columns. (Using span_columns=True would cover the
-                        # entire row and make the remaining cells invisible.)
-                        dpg.add_selectable(
-                            label=str(idx + 1),
-                            # DearPyGui usually calls item callbacks with
-                            # (sender, app_data, user_data). If a callback
-                            # only accepts two parameters, the optional
-                            # user_data parameter is still passed as the
-                            # third positional argument (often `None`).
-                            #
-                            # In earlier builds we used a 3-arg lambda with a
-                            # default parameter capturing idx. Unfortunately,
-                            # DearPyGui's third argument overwrote this default
-                            # with `None`, leading to:
-                            #   TypeError: int() argument ... not 'NoneType'
-                            #
-                            # We therefore accept the 3rd argument explicitly
-                            # and capture `idx` in a 4th default parameter.
-                            callback=lambda s, v, ud, u=idx: self._on_select_anchor(u),
-                        )
-                        dpg.add_text(a.sign)
-                        dpg.add_text(f"{a.start_s:.3f}")
-                        dpg.add_text(f"{a.end_s:.3f}")
+            for idx, a in enumerate(self.state.anchors):
+                with dpg.table_row():
+                    # Use a small selectable in the first column to implement
+                    # selection without hiding the other columns.
+                    dpg.add_selectable(
+                        label=str(idx + 1),
+                        # DearPyGui usually calls item callbacks with
+                        # (sender, app_data, user_data). If a callback only
+                        # accepts two parameters, the optional user_data
+                        # parameter is still passed as the third positional
+                        # argument (often `None`).
+                        #
+                        # We therefore accept the 3rd argument explicitly and
+                        # capture `idx` in a 4th default parameter.
+                        callback=lambda s, v, ud, u=idx: self._on_select_anchor(u),
+                    )
+                    dpg.add_text(a.sign)
+                    dpg.add_text(f"{a.start_s:.3f}")
+                    dpg.add_text(f"{a.end_s:.3f}")
 
         # Reset selection after rebuild.
         self.tags["anchor_selected_index"] = None

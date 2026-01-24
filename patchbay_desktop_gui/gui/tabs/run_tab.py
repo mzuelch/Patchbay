@@ -327,7 +327,10 @@ def build_tab_run(self: "MainWindow") -> None:
                         self.tags["cw_par_content"] = _par_content
 
                         # Parameter table (stable rows, values updated live)
-                        with dpg.child_window(border=False, height=-72, no_scrollbar=True, no_scroll_with_mouse=True):
+                        #
+                        # Important: only the table area should scroll.
+                        # The action buttons below remain fixed/visible.
+                        with dpg.child_window(border=False, height=-72, no_scrollbar=False, no_scroll_with_mouse=False):
                             with dpg.table(
                                 header_row=True,
                                 resizable=True,
