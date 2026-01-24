@@ -47,4 +47,4 @@ PATCHBAY/
 
 ## License
 
-MIT (see LICENSE.md).
+MIT (see LICENSE).
