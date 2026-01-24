@@ -47,4 +47,4 @@ PATCHBAY/
 
 ## License
 
-MIT (see `pyproject.toml`).
+MIT (see LICENSE.md).
