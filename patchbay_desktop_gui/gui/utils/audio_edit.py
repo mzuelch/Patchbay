@@ -22,7 +22,7 @@ Compressor
 
 Low-pass filter
     Linear-phase FIR low-pass filter using a windowed-sinc kernel and fast FFT
-    convolution (overlap-add). This is used by the built-in "Tiefpassfilter"
+    convolution (overlap-add). This is used by the built-in "Low-pass filter"
     audio FX plugin.
 
 Notes

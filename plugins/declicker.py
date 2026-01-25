@@ -278,7 +278,7 @@ def _declick(audio: np.ndarray, sample_rate: int, params: Dict[str, Any]) -> np.
 
 class DeClickerPlugin(AudioEffectPluginBase):
     plugin_id = "declicker"
-    display_name = "De-Klicker (Impuls-/Click-Entfernung)"
+    display_name = "De-clicker (impulse/click removal)"
     params = [
         ParamSpec.choice(
             "mode",

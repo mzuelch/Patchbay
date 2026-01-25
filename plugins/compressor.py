@@ -102,7 +102,7 @@ def _compressor_peak_ar(
 
 class CompressorPlugin(AudioEffectPluginBase):
     plugin_id = "compressor"
-    display_name = "Kompression"
+    display_name = "Compressor"
     params = [
         ParamSpec.float("threshold_db", "Threshold (dBFS)", default=-18.0, step=1.0, fmt="%.1f"),
         ParamSpec.float("ratio", "Ratio (>= 1.0)", default=2.0, min_value=1.0, step=0.1, fmt="%.2f"),

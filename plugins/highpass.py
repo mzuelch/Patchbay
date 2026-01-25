@@ -41,7 +41,7 @@ def _next_pow2(n: int) -> int:
     return 1 << (n - 1).bit_length()
 
 
-# Mapping of "Steilheit" choice to FIR length (odd tap count).
+# Mapping of slope choice to FIR length (odd tap count).
 # Larger tap counts => narrower transition band (steeper slope) at the cost of
 # higher CPU and stronger ringing near the cutoff.
 _STEEPNESS_TAPS = {
@@ -173,12 +173,12 @@ def _highpass_fir(
 
 class HighpassPlugin(AudioEffectPluginBase):
     plugin_id = "highpass"
-    display_name = "Hochpassfilter"
+    display_name = "High-pass filter"
 
     params = [
         ParamSpec.float(
             "cutoff_hz",
-            "Grenzfrequenz (Hz)",
+            "Cutoff frequency (Hz)",
             default=120.0,
             min_value=20.0,
             max_value=20000.0,
@@ -187,7 +187,7 @@ class HighpassPlugin(AudioEffectPluginBase):
         ),
         ParamSpec.choice(
             "steepness",
-            "Steilheit",
+            "Slope",
             default="24 dB/oct",
             choices=(
                 "6 dB/oct",
