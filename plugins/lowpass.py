@@ -155,12 +155,12 @@ def _lowpass_fir(
 
 class LowpassPlugin(AudioEffectPluginBase):
     plugin_id = "lowpass"
-    display_name = "Tiefpassfilter"
+    display_name = "Low-pass filter"
 
     params = [
         ParamSpec.float(
             "cutoff_hz",
-            "Grenzfrequenz (Hz)",
+            "Cutoff frequency (Hz)",
             default=8000.0,
             min_value=20.0,
             max_value=20000.0,
@@ -169,7 +169,7 @@ class LowpassPlugin(AudioEffectPluginBase):
         ),
         ParamSpec.choice(
             "steepness",
-            "Steilheit",
+            "Slope",
             default="24 dB/oct",
             choices=(
                 "6 dB/oct",

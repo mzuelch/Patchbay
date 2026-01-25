@@ -324,7 +324,7 @@ def _noise_reduce(
 
 class NoiseReductionPlugin(AudioEffectPluginBase):
     plugin_id = "noise_reduction"
-    display_name = "Rauschunterdrückung (spektral)"
+    display_name = "Spectral noise reduction"
     params = [
         ParamSpec.choice(
             "fft_size",

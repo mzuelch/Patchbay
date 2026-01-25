@@ -52,7 +52,7 @@ def _peak_normalize(audio: np.ndarray, *, target_peak: float = 0.999) -> np.ndar
 
 class NormalizePlugin(AudioEffectPluginBase):
     plugin_id = "normalize"
-    display_name = "Normalisierung"
+    display_name = "Normalization"
     params = [
         ParamSpec.float(
             "target_peak",
