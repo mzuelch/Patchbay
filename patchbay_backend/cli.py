@@ -21,7 +21,7 @@ import argparse
 import sys
 import faulthandler
 
-from .config import Config
+from .config import Config, ANCHOR_MODE_CHOICES, LOG_LEVEL_CHOICES
 from .progress import ConsoleProgress
 from .file_logging import FileLogger
 from .warnings_ctl import suppress_warnings
@@ -131,12 +131,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Write detailed diagnostics to this file (default: no logs).",
     )
     p.add_argument(
-        "--debug",
-        action=argparse.BooleanOptionalAction,
-        default=False,
-        help="Enable extra debug logging (only relevant together with --log-file).",
+        "--log-level",
+        choices=list(LOG_LEVEL_CHOICES),
+        default="Complete",
+        help="Logging verbosity when writing to a log file.",
     )
-
+    p.add_argument(
+        "--log-append",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Append to the log file (default) or replace it on start.",
+    )
     return p
 
 
@@ -157,7 +162,7 @@ def main(argv: list[str] | None = None) -> int:
     cfg = Config.from_cli_args(args)
 
     # Set up logging (file only) and progress reporting.
-    logger = FileLogger(cfg.log_file)
+    logger = FileLogger(cfg.log_file, level=cfg.log_level, append=cfg.log_append)
     progress = ConsoleProgress()
 
     # Print a short header; afterwards we use a single-line live status.
@@ -178,8 +183,8 @@ def main(argv: list[str] | None = None) -> int:
         if logger.enabled:
             import traceback
 
-            logger.log("EXCEPTION: " + repr(e))
-            logger.log(traceback.format_exc())
+            logger.log_error("EXCEPTION: " + repr(e))
+            logger.log_error(traceback.format_exc())
         raise
     finally:
         logger.close()

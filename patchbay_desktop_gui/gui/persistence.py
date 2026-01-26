@@ -61,6 +61,12 @@ def _default_settings() -> Dict[str, Any]:
             "anchor_mode": "strict",
             "no_resample": False,
         },
+        "logging": {
+            "enabled": False,
+            "level": "Complete",
+            "file": "",
+            "append": True,
+        },
         "chunking_global": {
             "use_chunking": False,
             "max_len_s": 15.0,

@@ -62,7 +62,11 @@ def run_with_callback(
     else:
         progress = CallbackProgress(callback)
 
-    logger = FileLogger(log_file if log_file is not None else cfg.log_file)
+    logger = FileLogger(
+        log_file if log_file is not None else cfg.log_file,
+        level=cfg.log_level,
+        append=cfg.log_append,
+    )
     try:
         return run_pipeline(cfg, progress=progress, logger=logger, cancel_token=cancel_token)
     finally:

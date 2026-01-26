@@ -47,24 +47,24 @@ from .cancel_token import CancellationToken
 
 def _log(logger: FileLogger, msg: str) -> None:
     if logger.enabled:
-        logger.log(msg)
+        logger.log_info(msg)
 
 
 def _log_tensor(logger: FileLogger, name: str, x) -> None:
-    """Debug helper to log tensor shapes without polluting non-debug runs."""
+    """Log tensor shapes at info level when logging is enabled."""
     if not logger.enabled:
         return
     try:
         import torch
 
         if isinstance(x, torch.Tensor):
-            logger.log(
+            logger.log_info(
                 f"{name}: ndim={x.ndim} shape={tuple(x.shape)} numel={x.numel()} dtype={x.dtype} device={x.device}"
             )
         else:
-            logger.log(f"{name}: type={type(x)}")
+            logger.log_info(f"{name}: type={type(x)}")
     except Exception as e:
-        logger.log(f"{name}: (failed to log tensor) {e}")
+        logger.log_warning(f"{name}: (failed to log tensor) {e}")
 
 
 def run_pipeline(
@@ -109,7 +109,7 @@ def run_pipeline(
     cancel_token = cancel_token or CancellationToken()
 
     progress = progress or NullProgress()
-    logger = logger or FileLogger(cfg.log_file)
+    logger = logger or FileLogger(cfg.log_file, level=cfg.log_level, append=cfg.log_append)
 
     # Basic config sanity checks (does not depend on audio metadata).
     cfg.validate_basic()
@@ -146,9 +146,8 @@ def run_pipeline(
     total_samples = int(wav_2d.shape[-1])
     dur_s = audio_duration_seconds(total_samples, sr)
 
-    if cfg.debug and logger.enabled:
-        _log_tensor(logger, "wav_2d@loaded", wav_2d)
-        _log(logger, f"audio: sr={sr} samples={total_samples} duration_s={dur_s:.3f}")
+    _log_tensor(logger, "wav_2d@loaded", wav_2d)
+    _log(logger, f"audio: sr={sr} samples={total_samples} duration_s={dur_s:.3f}")
 
     if not cfg.no_resample and sr != model_sr:
         progress.update(f"Resampling {sr}Hz -> {model_sr}Hz ...", percent=12.0)
@@ -167,9 +166,8 @@ def run_pipeline(
     if cfg.anchors:
         global_anchors = validate_and_clip_anchors(list(cfg.anchors), total_dur_s=dur_s)
         _log(logger, f"anchors: {len(global_anchors)} (mode={cfg.anchor_mode})")
-        if cfg.debug and logger.enabled:
-            for i, a in enumerate(global_anchors, start=1):
-                _log(logger, f"anchor[{i}]: {a[0]} {a[1]:.3f}s..{a[2]:.3f}s")
+        for i, a in enumerate(global_anchors, start=1):
+            _log(logger, f"anchor[{i}]: {a[0]} {a[1]:.3f}s..{a[2]:.3f}s")
     else:
         _log(logger, "anchors: none")
 
@@ -280,9 +278,8 @@ def run_pipeline(
             percent=chunk_percent(end),
         )
 
-        if cfg.debug and logger.enabled:
-            _log(logger, f"chunk[{chunk_idx}]: start={start} end={end} samples={chunk_samples}")
-            _log_tensor(logger, f"chunk[{chunk_idx}]", chunk)
+        _log(logger, f"chunk[{chunk_idx}]: start={start} end={end} samples={chunk_samples}")
+        _log_tensor(logger, f"chunk[{chunk_idx}]", chunk)
 
         # Decide anchors for this chunk.
         #
@@ -479,9 +476,8 @@ def run_pipeline(
         # Another safe point: allow cancellation after finishing a chunk.
         cancel_token.raise_if_cancelled()
 
-        if cfg.debug and logger.enabled:
-            _log_tensor(logger, f"chunk[{chunk_idx}].target", t)
-            _log_tensor(logger, f"chunk[{chunk_idx}].residual", r)
+        _log_tensor(logger, f"chunk[{chunk_idx}].target", t)
+        _log_tensor(logger, f"chunk[{chunk_idx}].residual", r)
 
     # ------------------------------------------------------------------
     # Reconstruction
@@ -515,8 +511,7 @@ def run_pipeline(
 
     progress.done(f"Done. target='{cfg.out_target}' | residual='{cfg.out_residual}'")
 
-    if cfg.debug and logger.enabled:
-        log_ram(logger, "RAM@done")
-        log_cuda_mem(logger, "CUDA@done")
+    log_ram(logger, "RAM@done")
+    log_cuda_mem(logger, "CUDA@done")
 
     return cfg.out_target, cfg.out_residual

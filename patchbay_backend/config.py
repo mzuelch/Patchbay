@@ -42,6 +42,12 @@ ANCHOR_MODE_CHOICES = (
     "prepend_nearest",
 )
 
+LOG_LEVEL_CHOICES = (
+    "Error",
+    "Error+Warning",
+    "Complete",
+)
+
 
 @dataclass(frozen=True)
 class Config:
@@ -77,7 +83,8 @@ class Config:
 
     # Diagnostics
     log_file: Optional[str] = None
-    debug: bool = False
+    log_level: str = "Complete"
+    log_append: bool = True
 
     def __post_init__(self):
         # Ensure anchors is always a list.
@@ -137,7 +144,8 @@ class Config:
             anchors=anchors,
             no_resample=bool(args.no_resample),
             log_file=args.log_file,
-            debug=bool(args.debug),
+            log_level=str(args.log_level),
+            log_append=bool(args.log_append),
         )
         cfg.validate_basic()
         return cfg
@@ -161,7 +169,8 @@ class Config:
         anchors: Optional[List[Anchor]] = None,
         no_resample: bool = False,
         log_file: Optional[str] = None,
-        debug: bool = False,
+        log_level: str = "Complete",
+        log_append: bool = True,
     ) -> "Config":
         """Convenience constructor for GUI/backends."""
         out_target2, out_residual2 = cls._derive_default_outputs(audio, out_target, out_residual)
@@ -187,7 +196,8 @@ class Config:
             anchors=anchors or [],
             no_resample=no_resample,
             log_file=log_file,
-            debug=debug,
+            log_level=log_level,
+            log_append=log_append,
         )
         cfg.validate_basic()
         return cfg
@@ -206,6 +216,9 @@ class Config:
 
         if self.anchor_mode not in ANCHOR_MODE_CHOICES:
             raise ValueError(f"anchor_mode must be one of: {', '.join(ANCHOR_MODE_CHOICES)}")
+
+        if self.log_level not in LOG_LEVEL_CHOICES:
+            raise ValueError(f"log_level must be one of: {', '.join(LOG_LEVEL_CHOICES)}")
 
         # Chunking constraints (partial; full checks happen once sr is known).
         if self.max_len_s is not None and self.max_len_s <= 0:

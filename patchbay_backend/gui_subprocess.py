@@ -64,7 +64,7 @@ def _load_config(path: str) -> Config:
         "max_len_s", "overlap_s",
         "anchor_mode",
         "no_resample",
-        "log_file", "debug",
+        "log_file", "log_level", "log_append",
     }
     cfg_kwargs = {k: d[k] for k in d.keys() if k in allowed}
     cfg_kwargs["anchors"] = anchors
@@ -94,7 +94,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         _emit({"event": str(event), "message": str(message), "percent": percent})
 
     progress = CallbackProgress(cb)
-    logger = FileLogger(cfg.log_file)
+    logger = FileLogger(cfg.log_file, level=cfg.log_level, append=cfg.log_append)
 
     try:
         out_t, out_r = run_pipeline(cfg, progress=progress, logger=logger)
