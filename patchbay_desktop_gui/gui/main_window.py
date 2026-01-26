@@ -42,7 +42,8 @@ from typing import List, Optional, Tuple
 import numpy as np
 
 from patchbay_backend import Anchor, Config
-from patchbay_backend.config import ANCHOR_MODE_CHOICES
+from patchbay_backend.config import ANCHOR_MODE_CHOICES, LOG_LEVEL_CHOICES
+from patchbay_backend.file_logging import FileLogger
 
 from .widgets.audio_player import AudioPlayer, load_audio_file, mono_mix
 from ..audiofx import AudioFxManager, ParamKind, ParamSpec
@@ -63,6 +64,8 @@ ANCHOR_MODE_SHORTDESC = {
     "append_previous": "Append previous anchor",
     "prepend_nearest": "Prepend nearest anchors (K)",
 }
+
+LOG_LEVEL_LABELS = list(LOG_LEVEL_CHOICES)
 
 
 def anchor_mode_shortdesc(mode: str) -> str:
@@ -115,6 +118,12 @@ class AppState:
     reranking_candidates: int = 1
     anchor_mode: str = "strict"
     no_resample: bool = False
+
+    # logging
+    logging_enabled: bool = False
+    logging_level: str = "Complete"
+    logging_file: str = ""
+    logging_append: bool = True
 
     # UI navigation
     ui_selected_tab: str = "input"
@@ -200,6 +209,15 @@ class MainWindow:
         self.state.anchor_mode = _loaded_anchor_mode
         self.state.no_resample = bool(b.get("no_resample", self.state.no_resample))
 
+        # Logging settings
+        lg = self.settings.data.get("logging", {})
+        self.state.logging_enabled = bool(lg.get("enabled", self.state.logging_enabled))
+        self.state.logging_level = str(lg.get("level", self.state.logging_level))
+        if self.state.logging_level not in LOG_LEVEL_LABELS:
+            self.state.logging_level = "Complete"
+        self.state.logging_file = str(lg.get("file", self.state.logging_file))
+        self.state.logging_append = bool(lg.get("append", self.state.logging_append))
+
         # Build model dropdown items (live from HF collection if possible)
         try:
             self._run_model_labels, self._run_model_label_to_id, self._run_model_default_label = build_model_dropdown(
@@ -216,6 +234,8 @@ class MainWindow:
 
         # Worker
         self.worker = BackendWorker()
+        self.logger: Optional[FileLogger] = None
+        self._configure_logger()
 
         # Audio players
         self.player_input = AudioPlayer()
@@ -2095,6 +2115,11 @@ class MainWindow:
             [(".wav", "WAV")],
             lambda s, a: self._on_save_residual_selected(s, a),
         )
+        make_save_dialog(
+            "dlg_save_log",
+            [(".log", "Log"), (".txt", "Text"), (".*", "All")],
+            lambda s, a: self._on_log_file_selected(s, a),
+        )
 
     def _show_dialog(self, tag: str) -> None:
         """Show a pre-created file dialog."""
@@ -2291,6 +2316,13 @@ class MainWindow:
             self._set_status(f"Saved snippet: {str(p)}")
         except Exception as e:
             self._show_error(f"Failed to save snippet: {e}")
+
+    def _on_log_file_selected(self, sender, app_data) -> None:
+        path = app_data.get("file_path_name") or ""
+        if not path:
+            return
+        if "opt_log_file" in self.tags:
+            self.dpg.set_value(self.tags["opt_log_file"], str(path))
 
 
     # ------------------------------------------------------------------
@@ -2706,7 +2738,7 @@ class MainWindow:
         self._set_progress_labels(0.0, "Starting…")
         self._set_status("Running backend...")
 
-        self.worker.start(cfg)
+        self.worker.start(cfg, logger=self.logger)
 
     def _on_abort(self) -> None:
         if not self.worker.is_running():
@@ -3170,6 +3202,8 @@ class MainWindow:
             out_target = None
             out_residual = None
 
+        log_file = self._resolve_log_path(self.state.logging_file) if self.state.logging_enabled else None
+
         cfg = Config.from_parameters(
             model=str(self.state.model),
             audio=str(audio_for_backend),
@@ -3185,8 +3219,9 @@ class MainWindow:
             anchor_mode=str(self.state.anchor_mode),
             anchors=anchors,
             no_resample=bool(self.state.no_resample),
-            log_file=None,
-            debug=False,
+            log_file=log_file,
+            log_level=str(self.state.logging_level),
+            log_append=bool(self.state.logging_append),
         )
         return cfg
 
@@ -3606,8 +3641,13 @@ class MainWindow:
             return
 
         ui = self.settings.data.setdefault("ui", {})
+        lg = self.settings.data.setdefault("logging", {})
+        log_level = str(lg.get("level", "Complete"))
+        if log_level not in LOG_LEVEL_LABELS:
+            log_level = "Complete"
+        log_append = bool(lg.get("append", True))
 
-        with dpg.window(tag="__options_window", label="Options", modal=True, show=True, width=520, height=420):
+        with dpg.window(tag="__options_window", label="Options", modal=True, show=True, width=520, height=520):
             dpg.add_text("UI Colors")
             self.tags["opt_anchor_plus"] = dpg.add_color_edit(default_value=ui.get("anchor_plus_color", [0, 180, 0, 80]), alpha_bar=True)
             self.tags["opt_anchor_minus"] = dpg.add_color_edit(default_value=ui.get("anchor_minus_color", [200, 60, 60, 80]), alpha_bar=True)
@@ -3616,6 +3656,23 @@ class MainWindow:
             dpg.add_separator()
             dpg.add_text("Waveform")
             self.tags["opt_points"] = dpg.add_input_int(default_value=int(ui.get("waveform_points", 6000)), min_value=500, max_value=40000)
+
+            dpg.add_separator()
+            dpg.add_text("Logging")
+            self.tags["opt_log_enabled"] = dpg.add_checkbox(label="Enable logging", default_value=bool(lg.get("enabled", False)))
+            self.tags["opt_log_level"] = dpg.add_combo(LOG_LEVEL_LABELS, label="Level", default_value=log_level)
+            with dpg.group(horizontal=True):
+                self.tags["opt_log_file"] = dpg.add_input_text(
+                    label="Log file (empty = patchbay.log)",
+                    default_value=str(lg.get("file", "")),
+                    width=320,
+                )
+                dpg.add_button(label="Browse...", callback=lambda s, a, u=None: self._show_dialog("dlg_save_log"))
+            self.tags["opt_log_mode"] = dpg.add_combo(
+                ["Append", "Replace"],
+                label="Mode",
+                default_value="Append" if log_append else "Replace",
+            )
 
             dpg.add_spacer(height=8)
             with dpg.group(horizontal=True):
@@ -3627,6 +3684,7 @@ class MainWindow:
     def _apply_options(self) -> None:
         dpg = self.dpg
         ui = self.settings.data.setdefault("ui", {})
+        lg = self.settings.data.setdefault("logging", {})
 
         def v(tag):
             return dpg.get_value(tag)
@@ -3637,7 +3695,22 @@ class MainWindow:
         ui["playhead_color"] = [int(x) for x in v(self.tags["opt_playhead"])[:4]]
         ui["waveform_points"] = int(v(self.tags["opt_points"]))
 
+        lg["enabled"] = bool(v(self.tags["opt_log_enabled"]))
+        lg_level = str(v(self.tags["opt_log_level"]))
+        if lg_level not in LOG_LEVEL_LABELS:
+            lg_level = "Complete"
+        lg["level"] = lg_level
+        lg["file"] = str(v(self.tags["opt_log_file"]))
+        lg["append"] = str(v(self.tags["opt_log_mode"])) != "Replace"
+
+        self.state.logging_enabled = bool(lg["enabled"])
+        self.state.logging_level = str(lg["level"])
+        self.state.logging_file = str(lg["file"])
+        self.state.logging_append = bool(lg["append"])
+
         self.settings.save()
+
+        self._configure_logger()
 
         # Apply UI changes immediately
         self._apply_colors(
@@ -3652,6 +3725,8 @@ class MainWindow:
         self.wave_input.zoom_to_fit()
         self.wave_target.zoom_to_fit()
         self.wave_residual.zoom_to_fit()
+
+        self._refresh_backend_call_preview()
 
         self._set_status("Options applied")
 
@@ -3777,10 +3852,22 @@ class MainWindow:
             f"    anchor_mode={cfg.anchor_mode!r},",
             f"    anchors={anchors_repr},",
             f"    no_resample={cfg.no_resample!r},",
-            ")",
-            "",
-            "out_target, out_residual = run_pipeline(cfg)",
         ]
+        if cfg.log_file:
+            lines.extend(
+                [
+                    f"    log_file={cfg.log_file!r},",
+                    f"    log_level={cfg.log_level!r},",
+                    f"    log_append={cfg.log_append!r},",
+                ]
+            )
+        lines.extend(
+            [
+                ")",
+                "",
+                "out_target, out_residual = run_pipeline(cfg)",
+            ]
+        )
         return "\n".join(lines)
 
     def _copy_backend_snippet_to_clipboard(self) -> None:
@@ -3809,11 +3896,54 @@ class MainWindow:
     # Status + Error dialogs
     # ------------------------------------------------------------------
 
+    def _resolve_log_path(self, path: str) -> Optional[str]:
+        if not self.state.logging_enabled:
+            return None
+        p = str(path or "").strip()
+        if not p:
+            return str(Path.cwd() / "patchbay.log")
+        return str(Path(p))
+
+    def _configure_logger(self) -> None:
+        try:
+            if self.logger:
+                self.logger.close()
+        except Exception:
+            pass
+        self.logger = None
+        if not self.state.logging_enabled:
+            return
+        log_path = self._resolve_log_path(self.state.logging_file)
+        self.logger = FileLogger(
+            log_path,
+            level=self.state.logging_level,
+            append=self.state.logging_append,
+        )
+        if self.logger and self.logger.enabled:
+            self.logger.log_info("GUI logging configured")
+
+    def _log_info(self, msg: str) -> None:
+        if self.logger and self.logger.enabled:
+            self.logger.log_info(str(msg))
+
+    def _log_warning(self, msg: str) -> None:
+        if self.logger and self.logger.enabled:
+            self.logger.log_warning(str(msg))
+
+    def _log_error(self, msg: str) -> None:
+        if self.logger and self.logger.enabled:
+            self.logger.log_error(str(msg))
+
     def _set_status(self, msg: str) -> None:
         if "status_line" in self.tags:
             self.dpg.set_value(self.tags["status_line"], str(msg))
+        if str(msg).strip().lower().startswith("warning"):
+            self._log_warning(msg)
+        else:
+            self._log_info(msg)
 
     def _show_error(self, text: str) -> None:
+        self._log_error(text)
         dpg = self.dpg
         if dpg.does_item_exist("__error_window"):
             dpg.delete_item("__error_window")
@@ -3836,5 +3966,10 @@ class MainWindow:
             self.player_input.close()
             self.player_target.close()
             self.player_residual.close()
+        except Exception:
+            pass
+        try:
+            if self.logger:
+                self.logger.close()
         except Exception:
             pass

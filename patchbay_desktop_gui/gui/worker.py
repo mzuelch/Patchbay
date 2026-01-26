@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from patchbay_backend.cancel_token import CancellationToken, CancelledError
+from patchbay_backend.file_logging import FileLogger
 from patchbay_backend.pipeline import run_pipeline
 from patchbay_backend.progress import CallbackProgress
 from patchbay_backend.config import Config
@@ -66,7 +67,7 @@ class BackendWorker:
         t = self._thread
         return bool(t is not None and t.is_alive())
 
-    def start(self, cfg: Config) -> None:
+    def start(self, cfg: Config, *, logger: Optional[FileLogger] = None) -> None:
         """Start processing if not already running."""
         with self._lock:
             if self.is_running():
@@ -85,6 +86,7 @@ class BackendWorker:
                     out_target, out_residual = run_pipeline(
                         cfg,
                         progress=progress,
+                        logger=logger,
                         cancel_token=self._cancel,
                     )
                     self.queue.put(
@@ -98,6 +100,9 @@ class BackendWorker:
                 except CancelledError:
                     self.queue.put(WorkerEvent(kind="cancelled", message="Cancelled"))
                 except Exception:
+                    if logger and logger.enabled:
+                        logger.log_error("Backend worker exception:")
+                        logger.log_error(_tb.format_exc())
                     self.queue.put(
                         WorkerEvent(
                             kind="error",

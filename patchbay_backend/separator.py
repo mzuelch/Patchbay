@@ -54,7 +54,7 @@ def resolve_device(device_choice: str, fp16: bool, logger: Optional[FileLogger] 
     elif device_choice == "cuda":
         dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if dev.type != "cuda" and logger and logger.enabled:
-            logger.log("WARN: device='cuda' requested but CUDA not available -> falling back to CPU")
+            logger.log_warning("device='cuda' requested but CUDA not available -> falling back to CPU")
     else:
         dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -96,7 +96,7 @@ class SamAudioSeparator:
 
         self.processor = SAMAudioProcessor.from_pretrained(self.model_id)
         if self.logger.enabled:
-            self.logger.log(f"processor loaded | audio_sampling_rate={int(self.processor.audio_sampling_rate)}")
+            self.logger.log_info(f"processor loaded | audio_sampling_rate={int(self.processor.audio_sampling_rate)}")
 
     @property
     def sample_rate(self) -> int:
@@ -119,7 +119,7 @@ class SamAudioSeparator:
             self.model = self.model.to(device=self.device_spec.device).eval()
 
         if self.logger.enabled:
-            self.logger.log(
+            self.logger.log_info(
                 f"model loaded | device={self.device_spec.device} | fp16={self.device_spec.use_fp16}"
             )
 
@@ -160,7 +160,7 @@ class SamAudioSeparator:
         # an explicit `load_model()`), so we lazily load here as a safe fallback.
         if self.model is None:
             if self.logger.enabled:
-                self.logger.log("WARN: model not loaded at first inference -> calling load_model() lazily")
+                self.logger.log_warning("model not loaded at first inference -> calling load_model() lazily")
             self.load_model()
 
         import torch
