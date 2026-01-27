@@ -76,7 +76,7 @@ def build_tab_output(self: "MainWindow") -> None:
             ):
                 self.tags["target_right_panel"] = "target_right_panel"
                 self.tags["target_audiofx_label"] = dpg.add_text("AudioFX")
-                with dpg.child_window(tag="target_audiofx_panel", border=True, height=250, width=-1):
+                with dpg.child_window(tag="target_audiofx_panel", border=True, height=180, width=-1):
                     self.tags["target_audiofx_panel"] = "target_audiofx_panel"
                     self._build_output_processing_panel(kind="target")
                 self.tags["target_audiofx_sep"] = dpg.add_separator()
@@ -135,7 +135,7 @@ def build_tab_output(self: "MainWindow") -> None:
             ):
                 self.tags["residual_right_panel"] = "residual_right_panel"
                 self.tags["residual_audiofx_label"] = dpg.add_text("AudioFX")
-                with dpg.child_window(tag="residual_audiofx_panel", border=True, height=250, width=-1):
+                with dpg.child_window(tag="residual_audiofx_panel", border=True, height=180, width=-1):
                     self.tags["residual_audiofx_panel"] = "residual_audiofx_panel"
                     self._build_output_processing_panel(kind="residual")
                 self.tags["residual_audiofx_sep"] = dpg.add_separator()

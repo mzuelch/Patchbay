@@ -76,7 +76,7 @@ def build_tab_input(self: "MainWindow") -> None:
             ):
                 self.tags["input_right_panel"] = "input_right_panel"
                 self.tags["input_audiofx_label"] = dpg.add_text("Input processing (AudioFX)")
-                with dpg.child_window(tag="input_audiofx_panel", border=True, height=520, width=-1):
+                with dpg.child_window(tag="input_audiofx_panel", border=True, height=400, width=-1):
                     self.tags["input_audiofx_panel"] = "input_audiofx_panel"
                     self._build_output_processing_panel(kind="input")
                 self.tags["input_audiofx_sep"] = dpg.add_separator()
