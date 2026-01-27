@@ -364,7 +364,8 @@ class MainWindow:
 
 
         # Waveform widgets
-        pts = int(self.settings.data.get("ui", {}).get("waveform_points", 6000))
+        ui = self.settings.data.get("ui", {})
+        pts = int(ui.get("waveform_points", 6000))
         self.wave_input = WaveformWidget(label="Input", points=pts, on_seek=self._on_input_seek)
 
         # Output waveforms: attach a right-click callback so the output editing
@@ -382,7 +383,6 @@ class MainWindow:
         )
 
         # Apply colors from settings
-        ui = self.settings.data.get("ui", {})
         def rgba(key, default):
             v = ui.get(key, list(default))
             return (int(v[0]), int(v[1]), int(v[2]), int(v[3])) if isinstance(v, (list, tuple)) and len(v) == 4 else default
@@ -393,6 +393,14 @@ class MainWindow:
             anchor_plus=rgba("anchor_plus_color", (0, 180, 0, 80)),
             anchor_minus=rgba("anchor_minus_color", (200, 60, 60, 80)),
         )
+
+        # Apply waveform scaling from settings.
+        scale_mode = str(ui.get("waveform_scale", "linear")).strip().lower()
+        if scale_mode not in ("linear", "logarithmic"):
+            scale_mode = "linear"
+        self.wave_input.set_scale_mode(scale_mode)
+        self.wave_target.set_scale_mode(scale_mode)
+        self.wave_residual.set_scale_mode(scale_mode)
 
         # DearPyGui item tags (filled in build())
         self.tags = {}
@@ -475,6 +483,13 @@ class MainWindow:
         # Keep the run-tab workflow panels vertically centered.
         try:
             self._update_run_workflow_centering()
+        except Exception:
+            pass
+
+        # Keep output/input layout responsive to window size changes.
+        try:
+            self._update_output_layout()
+            self._update_input_layout()
         except Exception:
             pass
 
@@ -697,6 +712,170 @@ class MainWindow:
         except Exception:
             pass
 
+    def _update_output_layout(self) -> None:
+        """Resize output panels and keep waveform/AudioFX areas aligned."""
+        dpg = self.dpg
+        panel_tag = "__panel_output"
+        target_panel = self.tags.get("output_target_panel")
+        residual_panel = self.tags.get("output_residual_panel")
+        split_sep = self.tags.get("output_split_sep")
+
+        if not target_panel or not residual_panel or not dpg.does_item_exist(panel_tag):
+            return
+
+        try:
+            panel_w, panel_h = dpg.get_item_rect_size(panel_tag)
+        except Exception:
+            return
+        if panel_h < 60:
+            return
+
+        sep_h = 0.0
+        if split_sep and dpg.does_item_exist(split_sep):
+            try:
+                sep_h = float(dpg.get_item_rect_size(split_sep)[1])
+            except Exception:
+                sep_h = 0.0
+
+        pad = 6.0
+        avail_h = max(0.0, float(panel_h) - sep_h - pad)
+        half_h = avail_h / 2.0
+        target_h = max(160, int(half_h))
+        residual_h = max(160, int(avail_h - target_h))
+
+        try:
+            dpg.configure_item(target_panel, height=target_h, width=panel_w)
+            dpg.configure_item(residual_panel, height=residual_h, width=panel_w)
+        except Exception:
+            pass
+
+        self._update_output_section_layout("target", self.wave_target)
+        self._update_output_section_layout("residual", self.wave_residual)
+
+    def _update_output_section_layout(self, kind: str, wave: WaveformWidget) -> None:
+        dpg = self.dpg
+        panel_tag = self.tags.get(f"output_{kind}_panel")
+        left_tag = self.tags.get(f"{kind}_left_panel")
+        right_tag = self.tags.get(f"{kind}_right_panel")
+        save_tag = self.tags.get(f"{kind}_save_group")
+        controls_tag = self.tags.get(f"{kind}_controls_group")
+        audiofx_label_tag = self.tags.get(f"{kind}_audiofx_label")
+        audiofx_panel_tag = self.tags.get(f"{kind}_audiofx_panel")
+        audiofx_sep_tag = self.tags.get(f"{kind}_audiofx_sep")
+        history_tag = self.tags.get(f"out_{kind}_history_group")
+
+        if not panel_tag or not left_tag or not right_tag:
+            return
+        if not dpg.does_item_exist(panel_tag):
+            return
+
+        try:
+            panel_w, _panel_h = dpg.get_item_rect_size(panel_tag)
+        except Exception:
+            panel_w = 0
+
+        if panel_w:
+            left_w = max(240, int(panel_w * 0.72))
+            right_w = max(200, int(panel_w - left_w - 12))
+            try:
+                dpg.configure_item(left_tag, width=left_w)
+                dpg.configure_item(right_tag, width=right_w)
+            except Exception:
+                pass
+
+        try:
+            left_h = float(dpg.get_item_rect_size(left_tag)[1])
+        except Exception:
+            left_h = 0.0
+
+        if left_h > 40:
+            save_h = 0.0
+            controls_h = 0.0
+            try:
+                if save_tag and dpg.does_item_exist(save_tag):
+                    save_h = float(dpg.get_item_rect_size(save_tag)[1])
+                if controls_tag and dpg.does_item_exist(controls_tag):
+                    controls_h = float(dpg.get_item_rect_size(controls_tag)[1])
+            except Exception:
+                save_h = 0.0
+                controls_h = 0.0
+
+            wave_h = max(80, int(left_h - save_h - controls_h - 18))
+            wave.set_canvas_height(wave_h)
+
+        if right_tag and audiofx_panel_tag and dpg.does_item_exist(right_tag) and dpg.does_item_exist(audiofx_panel_tag):
+            try:
+                right_h = float(dpg.get_item_rect_size(right_tag)[1])
+            except Exception:
+                right_h = 0.0
+
+            if right_h > 40:
+                label_h = 0.0
+                sep_h = 0.0
+                history_h = 0.0
+                try:
+                    if audiofx_label_tag and dpg.does_item_exist(audiofx_label_tag):
+                        label_h = float(dpg.get_item_rect_size(audiofx_label_tag)[1])
+                    if audiofx_sep_tag and dpg.does_item_exist(audiofx_sep_tag):
+                        sep_h = float(dpg.get_item_rect_size(audiofx_sep_tag)[1])
+                    if history_tag and dpg.does_item_exist(history_tag):
+                        history_h = float(dpg.get_item_rect_size(history_tag)[1])
+                except Exception:
+                    label_h = 0.0
+                    sep_h = 0.0
+                    history_h = 0.0
+
+                if history_tag and dpg.does_item_exist(history_tag):
+                    history_h = max(history_h, 44.0)
+                audiofx_h = max(120, int(right_h - label_h - sep_h - history_h - 16))
+                try:
+                    dpg.configure_item(audiofx_panel_tag, height=audiofx_h)
+                except Exception:
+                    pass
+
+    def _update_input_layout(self) -> None:
+        """Resize input AudioFX area to keep history buttons at the bottom."""
+        dpg = self.dpg
+        right_tag = self.tags.get("input_right_panel")
+        audiofx_label_tag = self.tags.get("input_audiofx_label")
+        audiofx_panel_tag = self.tags.get("input_audiofx_panel")
+        audiofx_sep_tag = self.tags.get("input_audiofx_sep")
+        history_tag = self.tags.get("out_input_history_group")
+
+        if not right_tag or not audiofx_panel_tag or not dpg.does_item_exist(right_tag):
+            return
+
+        try:
+            right_h = float(dpg.get_item_rect_size(right_tag)[1])
+        except Exception:
+            right_h = 0.0
+
+        if right_h <= 40:
+            return
+
+        label_h = 0.0
+        sep_h = 0.0
+        history_h = 0.0
+        try:
+            if audiofx_label_tag and dpg.does_item_exist(audiofx_label_tag):
+                label_h = float(dpg.get_item_rect_size(audiofx_label_tag)[1])
+            if audiofx_sep_tag and dpg.does_item_exist(audiofx_sep_tag):
+                sep_h = float(dpg.get_item_rect_size(audiofx_sep_tag)[1])
+            if history_tag and dpg.does_item_exist(history_tag):
+                history_h = float(dpg.get_item_rect_size(history_tag)[1])
+        except Exception:
+            label_h = 0.0
+            sep_h = 0.0
+            history_h = 0.0
+
+        if history_tag and dpg.does_item_exist(history_tag):
+            history_h = max(history_h, 44.0)
+        audiofx_h = max(120, int(right_h - label_h - sep_h - history_h - 16))
+        try:
+            dpg.configure_item(audiofx_panel_tag, height=audiofx_h)
+        except Exception:
+            pass
+
     def _sync_playheads(self) -> None:
         """Synchronize playhead indicators with the underlying players."""
         # Update playheads based on current playback positions.
@@ -913,9 +1092,13 @@ class MainWindow:
 
         self.state.ui_selected_tab = key
 
-    def _build_waveform_controls_input(self) -> None:
+    def _build_waveform_controls_input(self, *, tag: Optional[str] = None) -> None:
         dpg = self.dpg
-        with dpg.group(horizontal=True):
+        if tag:
+            group_ctx = dpg.group(horizontal=True, tag=tag)
+        else:
+            group_ctx = dpg.group(horizontal=True)
+        with group_ctx:
             # Transport
             dpg.add_button(label="Play", callback=lambda s, a, u=None: self._play("input"))
             dpg.add_button(label="Stop", callback=lambda s, a, u=None: self._stop("input"))
@@ -1220,10 +1403,14 @@ class MainWindow:
 
         self._on_output_compress(kind)
 
-    def _build_waveform_controls_generic(self, *, kind: str) -> None:
+    def _build_waveform_controls_generic(self, *, kind: str, tag: Optional[str] = None) -> None:
         """Controls for target/residual (no markers)."""
         dpg = self.dpg
-        with dpg.group(horizontal=True):
+        if tag:
+            group_ctx = dpg.group(horizontal=True, tag=tag)
+        else:
+            group_ctx = dpg.group(horizontal=True)
+        with group_ctx:
             dpg.add_button(label="Play", callback=lambda s, a, u=None: self._play(kind))
             dpg.add_button(label="Stop", callback=lambda s, a, u=None: self._stop(kind))
             dpg.add_button(label="Rewind", callback=lambda s, a, u=None: self._rewind(kind))
@@ -1977,13 +2164,36 @@ class MainWindow:
         dpg = self.dpg
         prefix = f"out_{kind}_"
 
-        with dpg.group(horizontal=True):
-            self.tags[prefix + "undo_btn"] = dpg.add_button(label="Undo", callback=lambda s, a, u=None: self._on_output_undo(kind))
-            self.tags[prefix + "redo_btn"] = dpg.add_button(label="Redo", callback=lambda s, a, u=None: self._on_output_redo(kind))
-            dpg.add_spacer(width=10)
-            self.tags[prefix + "restore_btn"] = dpg.add_button(label="Restore original", callback=lambda s, a, u=None: self._on_output_restore_original(kind))
-            dpg.add_spacer(width=20)
-            self.tags[prefix + "peak_text"] = dpg.add_text("")
+        with dpg.group(tag=prefix + "history_group"):
+            with dpg.table(
+                header_row=False,
+                resizable=False,
+                policy=dpg.mvTable_SizingStretchProp,
+                borders_innerV=False,
+                borders_outerV=False,
+                borders_innerH=False,
+                borders_outerH=False,
+            ):
+                dpg.add_table_column(init_width_or_weight=0.75)
+                dpg.add_table_column(init_width_or_weight=0.25)
+                with dpg.table_row():
+                    with dpg.group(horizontal=True):
+                        self.tags[prefix + "undo_btn"] = dpg.add_button(
+                            label="Undo",
+                            callback=lambda s, a, u=None: self._on_output_undo(kind),
+                        )
+                        self.tags[prefix + "redo_btn"] = dpg.add_button(
+                            label="Redo",
+                            callback=lambda s, a, u=None: self._on_output_redo(kind),
+                        )
+                        dpg.add_spacer(width=10)
+                        self.tags[prefix + "restore_btn"] = dpg.add_button(
+                            label="Restore original",
+                            callback=lambda s, a, u=None: self._on_output_restore_original(kind),
+                        )
+                    with dpg.group(horizontal=True):
+                        dpg.add_spacer(width=-1)
+                        self.tags[prefix + "peak_text"] = dpg.add_text("")
 
         self._update_output_edit_ui(kind)
 
@@ -2180,6 +2390,10 @@ class MainWindow:
             # Waveform + player
             self.player_input.load_buffer(audio, sr)
             self.wave_input.set_waveform(mono_mix(audio), sr)
+            scale_mode = str(self.settings.data.get("ui", {}).get("waveform_scale", "linear")).strip().lower()
+            if scale_mode not in ("linear", "logarithmic"):
+                scale_mode = "linear"
+            self.wave_input.set_scale_mode(scale_mode)
             self.wave_input.set_anchors(self.state.anchors)
             self.wave_input.clear_markers()
 
@@ -3656,6 +3870,14 @@ class MainWindow:
             dpg.add_separator()
             dpg.add_text("Waveform")
             self.tags["opt_points"] = dpg.add_input_int(default_value=int(ui.get("waveform_points", 6000)), min_value=500, max_value=40000)
+            scale_default = str(ui.get("waveform_scale", "linear")).strip().lower()
+            if scale_default not in ("linear", "logarithmic"):
+                scale_default = "linear"
+            self.tags["opt_scale"] = dpg.add_combo(
+                ["Linear", "Logarithmic"],
+                label="Scaling",
+                default_value="Logarithmic" if scale_default == "logarithmic" else "Linear",
+            )
 
             dpg.add_separator()
             dpg.add_text("Logging")
@@ -3694,6 +3916,10 @@ class MainWindow:
         ui["marker_color"] = [int(x) for x in v(self.tags["opt_marker"])[:4]]
         ui["playhead_color"] = [int(x) for x in v(self.tags["opt_playhead"])[:4]]
         ui["waveform_points"] = int(v(self.tags["opt_points"]))
+        scale_value = str(v(self.tags["opt_scale"])).strip().lower()
+        if scale_value not in ("linear", "logarithmic"):
+            scale_value = "linear"
+        ui["waveform_scale"] = scale_value
 
         lg["enabled"] = bool(v(self.tags["opt_log_enabled"]))
         lg_level = str(v(self.tags["opt_log_level"]))
@@ -3722,6 +3948,9 @@ class MainWindow:
         self.wave_input.points = int(ui["waveform_points"])
         self.wave_target.points = int(ui["waveform_points"])
         self.wave_residual.points = int(ui["waveform_points"])
+        self.wave_input.set_scale_mode(str(ui["waveform_scale"]))
+        self.wave_target.set_scale_mode(str(ui["waveform_scale"]))
+        self.wave_residual.set_scale_mode(str(ui["waveform_scale"]))
         self.wave_input.zoom_to_fit()
         self.wave_target.zoom_to_fit()
         self.wave_residual.zoom_to_fit()
