@@ -825,6 +825,8 @@ class MainWindow:
                     sep_h = 0.0
                     history_h = 0.0
 
+                if history_tag and dpg.does_item_exist(history_tag):
+                    history_h = max(history_h, 44.0)
                 audiofx_h = max(120, int(right_h - label_h - sep_h - history_h - 16))
                 try:
                     dpg.configure_item(audiofx_panel_tag, height=audiofx_h)
@@ -866,6 +868,8 @@ class MainWindow:
             sep_h = 0.0
             history_h = 0.0
 
+        if history_tag and dpg.does_item_exist(history_tag):
+            history_h = max(history_h, 44.0)
         audiofx_h = max(120, int(right_h - label_h - sep_h - history_h - 16))
         try:
             dpg.configure_item(audiofx_panel_tag, height=audiofx_h)
