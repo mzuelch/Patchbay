@@ -42,6 +42,9 @@ RGBA = Tuple[int, int, int, int]
 #
 # This keeps the visual scale consistent across files and avoids auto-scaling.
 DISPLAY_Y_MAX_AMP: float = 1.0
+WAVEFORM_SCALE_LINEAR = "linear"
+WAVEFORM_SCALE_LOG = "logarithmic"
+LOG_SCALE_FACTOR: float = 9.0
 
 
 @dataclass
@@ -93,6 +96,8 @@ class WaveformWidget:
         self._y_max: float = float(DISPLAY_Y_MAX_AMP)
         # Peak of the *loaded* signal (for diagnostics / status display).
         self._signal_peak: float = 0.0
+        # Display scaling mode (linear/logarithmic).
+        self._scale_mode: str = WAVEFORM_SCALE_LINEAR
 
         # Playhead / markers
         self._playhead_s: float = 0.0
@@ -342,6 +347,17 @@ class WaveformWidget:
         """Return the internal drawlist tag."""
         return str(self._draw_tag) if self._draw_tag is not None else None
 
+    def set_canvas_height(self, height: int) -> None:
+        """Resize the waveform canvas (child window) to a given height."""
+        try:
+            import dearpygui.dearpygui as dpg
+
+            if self._canvas_tag and dpg.does_item_exist(self._canvas_tag):
+                dpg.configure_item(self._canvas_tag, height=int(height))
+                self._pending_redraw = True
+        except Exception:
+            pass
+
     def set_colors(
         self,
         *,
@@ -371,6 +387,17 @@ class WaveformWidget:
         self._y_max = float(DISPLAY_Y_MAX_AMP)
         self._pending_redraw = True
         self.zoom_to_fit()
+
+    def set_scale_mode(self, mode: str) -> None:
+        """Set waveform display scaling mode ("linear" or "logarithmic")."""
+        mode = str(mode or "").strip().lower()
+        if mode not in (WAVEFORM_SCALE_LINEAR, WAVEFORM_SCALE_LOG):
+            mode = WAVEFORM_SCALE_LINEAR
+        if mode == self._scale_mode:
+            return
+        self._scale_mode = mode
+        self._pending_redraw = True
+        self.redraw()
 
     def clear_waveform(self) -> None:
         self._mono = None
@@ -552,7 +579,7 @@ class WaveformWidget:
             # so we never draw outside of the canvas.
             for t, y in zip(self._disp_x, self._disp_y):
                 x = self._time_to_x(float(t), w)
-                yv = float(y)
+                yv = self._apply_scale(float(y))
                 if yv > self._y_max:
                     yv = self._y_max
                 elif yv < -self._y_max:
@@ -1058,6 +1085,15 @@ class WaveformWidget:
 
         self._disp_x = x
         self._disp_y = y.astype(np.float32, copy=False)
+
+    def _apply_scale(self, y: float) -> float:
+        if self._scale_mode == WAVEFORM_SCALE_LOG:
+            ay = abs(y)
+            if ay <= 0.0:
+                return 0.0
+            scaled = np.log1p(LOG_SCALE_FACTOR * ay) / np.log1p(LOG_SCALE_FACTOR)
+            return float(np.copysign(scaled, y))
+        return float(y)
 
     def _status_text(self) -> str:
         dur = self._duration_s
