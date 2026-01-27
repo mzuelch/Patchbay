@@ -2390,6 +2390,10 @@ class MainWindow:
             # Waveform + player
             self.player_input.load_buffer(audio, sr)
             self.wave_input.set_waveform(mono_mix(audio), sr)
+            scale_mode = str(self.settings.data.get("ui", {}).get("waveform_scale", "linear")).strip().lower()
+            if scale_mode not in ("linear", "logarithmic"):
+                scale_mode = "linear"
+            self.wave_input.set_scale_mode(scale_mode)
             self.wave_input.set_anchors(self.state.anchors)
             self.wave_input.clear_markers()
 
