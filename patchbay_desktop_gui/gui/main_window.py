@@ -827,7 +827,7 @@ class MainWindow:
 
                 if history_tag and dpg.does_item_exist(history_tag):
                     history_h = max(history_h, 44.0)
-                audiofx_h = max(120, int(right_h - label_h - sep_h - history_h - 16))
+                audiofx_h = max(80, int(right_h - label_h - sep_h - history_h - 28))
                 try:
                     dpg.configure_item(audiofx_panel_tag, height=audiofx_h)
                 except Exception:
@@ -870,7 +870,7 @@ class MainWindow:
 
         if history_tag and dpg.does_item_exist(history_tag):
             history_h = max(history_h, 44.0)
-        audiofx_h = max(120, int(right_h - label_h - sep_h - history_h - 16))
+        audiofx_h = max(80, int(right_h - label_h - sep_h - history_h - 28))
         try:
             dpg.configure_item(audiofx_panel_tag, height=audiofx_h)
         except Exception:
