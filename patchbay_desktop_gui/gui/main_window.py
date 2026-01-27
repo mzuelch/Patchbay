@@ -828,6 +828,7 @@ class MainWindow:
                 if history_tag and dpg.does_item_exist(history_tag):
                     history_h = max(history_h, 44.0)
                 audiofx_h = max(80, int(right_h - label_h - sep_h - history_h - 28))
+                audiofx_h = min(audiofx_h, self._max_audiofx_height(right_h, label_h, sep_h, history_h))
                 try:
                     dpg.configure_item(audiofx_panel_tag, height=audiofx_h)
                 except Exception:
@@ -871,10 +872,17 @@ class MainWindow:
         if history_tag and dpg.does_item_exist(history_tag):
             history_h = max(history_h, 44.0)
         audiofx_h = max(80, int(right_h - label_h - sep_h - history_h - 28))
+        audiofx_h = min(audiofx_h, self._max_audiofx_height(right_h, label_h, sep_h, history_h))
         try:
             dpg.configure_item(audiofx_panel_tag, height=audiofx_h)
         except Exception:
             pass
+
+    def _max_audiofx_height(self, panel_h: float, label_h: float, sep_h: float, history_h: float) -> int:
+        """Return a capped AudioFX panel height to keep history controls visible."""
+        reserved_history_h = max(history_h, 84.0)
+        max_h = int(panel_h - label_h - sep_h - reserved_history_h - 24)
+        return max(80, max_h)
 
     def _sync_playheads(self) -> None:
         """Synchronize playhead indicators with the underlying players."""
