@@ -1,0 +1,455 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 11 0 R >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+3 0 obj
+<< /Length 1971 >>
+stream
+BT
+/F1 20 Tf
+72 770 Td
+(PATCHBAY User Manual / Benutzerhandbuch / Manuel utilisateur) Tj
+0 -24 Td
+() Tj
+0 -24 Td
+(Version: 1.1) Tj
+0 -24 Td
+(Date: 2025-01-01) Tj
+ET
+BT
+/F1 11 Tf
+72 690 Td
+(EN: PATCHBAY is a desktop GUI for splitting and separating long audio with) Tj
+0 -14 Td
+(    the facebook/SAM-Audio model. This manual covers installation, UI and) Tj
+0 -14 Td
+(    a recommended workflow.) Tj
+0 -14 Td
+(DE: PATCHBAY ist eine Desktop-GUI zum Aufteilen und Trennen langer Audios) Tj
+0 -14 Td
+(    mit dem facebook/SAM-Audio-Modell. Dieses Handbuch beschreibt Installation,) Tj
+0 -14 Td
+(    Benutzeroberflche und Workflow.) Tj
+0 -14 Td
+(FR: PATCHBAY est une interface de bureau pour dcouper et sparer de longs) Tj
+0 -14 Td
+(    fichiers audio avec le modle facebook/SAM-Audio. Ce manuel couvre) Tj
+0 -14 Td
+(    l'installation, l'interface et le flux de travail.) Tj
+ET
+BT
+/F1 14 Tf
+72 600 Td
+(Contents / Inhalt / Sommaire) Tj
+ET
+BT
+/F1 11 Tf
+90 570 Td
+(1. Requirements and Installation / Voraussetzungen und Installation / Prrequis) Tj
+0 -14 Td
+(2. Quickstart / Schnellstart / Dmarrage rapide) Tj
+0 -14 Td
+(3. UI Overview / UI-berblick / Vue d'ensemble) Tj
+0 -14 Td
+(4. Best-Practice Workflow / Best-Practice-Workflow / Flux recommand) Tj
+0 -14 Td
+(5. AudioFX Plugins / AudioFX-Plugins / Plugins AudioFX) Tj
+0 -14 Td
+(6. Models & Offline / Modelle & Offline / Modles et hors-ligne) Tj
+0 -14 Td
+(7. Export & QA / Export & Qualitt / Export et contrle qualit) Tj
+0 -14 Td
+(8. Troubleshooting / Fehlerbehebung / Dpannage) Tj
+ET
+BT
+/F1 10 Tf
+72 360 Td
+(Figure 1: Main window \(schematic\)) Tj
+ET
+1 w
+72 170 451 180 re
+S
+1 w
+72 330 451 20 re
+S
+BT
+/F1 9 Tf
+80 335 Td
+(PATCHBAY) Tj
+ET
+1 w
+72 310 120 18 re
+S
+1 w
+194 310 140 18 re
+S
+1 w
+336 310 120 18 re
+S
+BT
+/F1 8 Tf
+78 315 Td
+(Input & Anchors) Tj
+ET
+BT
+/F1 8 Tf
+202 315 Td
+(Description & Run) Tj
+ET
+BT
+/F1 8 Tf
+344 315 Td
+(Output) Tj
+ET
+1 w
+80 180 435 120 re
+S
+BT
+/F1 8 Tf
+90 260 Td
+(Waveform / Markers) Tj
+ET
+endstream
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 3 0 R /Resources << /Font << /F1 2 0 R >> >> >>
+endobj
+5 0 obj
+<< /Length 1971 >>
+stream
+BT
+/F1 16 Tf
+72 770 Td
+(1. Requirements and Installation) Tj
+ET
+BT
+/F1 11 Tf
+72 730 Td
+(EN: Windows \(tested with Conda\); NVIDIA GPU optional but recommended.) Tj
+0 -14 Td
+(DE: Windows \(getestet mit Conda\); NVIDIA-GPU optional aber empfohlen.) Tj
+0 -14 Td
+(FR: Windows \(test avec Conda\) ; GPU NVIDIA optionnel mais recommand.) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(EN: conda env create -f environment.yml) Tj
+0 -14 Td
+(EN: conda activate patchbay) Tj
+0 -14 Td
+(EN: python patchbay_gui.py) Tj
+0 -14 Td
+(DE: conda env create -f environment.yml) Tj
+0 -14 Td
+(DE: conda activate patchbay) Tj
+0 -14 Td
+(DE: python patchbay_gui.py) Tj
+0 -14 Td
+(FR: conda env create -f environment.yml) Tj
+0 -14 Td
+(FR: conda activate patchbay) Tj
+0 -14 Td
+(FR: python patchbay_gui.py) Tj
+ET
+BT
+/F1 16 Tf
+72 560 Td
+(2. Quickstart / Schnellstart / Dmarrage rapide) Tj
+ET
+BT
+/F1 11 Tf
+72 520 Td
+(EN: Load audio in 'Input & Anchors'.) Tj
+0 -14 Td
+(DE: Audio in 'Input & Anchors' laden.) Tj
+0 -14 Td
+(FR: Charger l'audio dans 'Input & Anchors'.) Tj
+0 -14 Td
+(EN: Optional markers/anchors.) Tj
+0 -14 Td
+(DE: Optional Marker/Anchors setzen.) Tj
+0 -14 Td
+(FR: Marqueurs/anchors optionnels.) Tj
+0 -14 Td
+(EN: Enter description in 'Description & Run', select model, click Run.) Tj
+0 -14 Td
+(DE: Beschreibung in 'Description & Run', Modell whlen, Run starten.) Tj
+0 -14 Td
+(FR: Saisir la description, choisir le modle, lancer Run.) Tj
+0 -14 Td
+(EN: Review output and export.) Tj
+0 -14 Td
+(DE: Output prfen und exportieren.) Tj
+0 -14 Td
+(FR: Vrifier la sortie et exporter.) Tj
+ET
+BT
+/F1 10 Tf
+72 330 Td
+(Figure 2: Description & Run \(schematic\)) Tj
+ET
+1 w
+72 140 451 180 re
+S
+1 w
+72 300 451 20 re
+S
+BT
+/F1 9 Tf
+80 305 Td
+(Description & Run) Tj
+ET
+1 w
+80 260 430 30 re
+S
+BT
+/F1 8 Tf
+90 270 Td
+(Target description) Tj
+ET
+1 w
+80 210 200 30 re
+S
+1 w
+290 210 220 30 re
+S
+BT
+/F1 8 Tf
+90 220 Td
+(Chunk Size) Tj
+ET
+BT
+/F1 8 Tf
+300 220 Td
+(Model) Tj
+ET
+1 w
+80 160 120 30 re
+S
+BT
+/F1 9 Tf
+120 170 Td
+(Run) Tj
+ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 5 0 R /Resources << /Font << /F1 2 0 R >> >> >>
+endobj
+7 0 obj
+<< /Length 1920 >>
+stream
+BT
+/F1 16 Tf
+72 770 Td
+(3. UI Overview / UI-berblick / Vue d'ensemble) Tj
+ET
+BT
+/F1 11 Tf
+72 730 Td
+(EN: Input & Anchors: load audio, markers, input AudioFX.) Tj
+0 -14 Td
+(DE: Input & Anchors: Audio laden, Marker, AudioFX am Input.) Tj
+0 -14 Td
+(FR: Input & Anchors : charger l'audio, marqueurs, AudioFX en entre.) Tj
+0 -14 Td
+(EN: Description & Run: text description, chunking, model, device, Run/Abort.) Tj
+0 -14 Td
+(DE: Description & Run: Text, Chunking, Modell, Device, Run/Abort.) Tj
+0 -14 Td
+(FR: Description & Run : texte, chunking, modle, device, Run/Abort.) Tj
+0 -14 Td
+(EN: Output: review target/residual, apply AudioFX, export.) Tj
+0 -14 Td
+(DE: Output: Target/Residual prfen, AudioFX, Export.) Tj
+0 -14 Td
+(FR: Output : vrifier target/residual, AudioFX, export.) Tj
+ET
+BT
+/F1 10 Tf
+72 520 Td
+(Figure 3: Output tab \(schematic\)) Tj
+ET
+1 w
+72 330 451 180 re
+S
+1 w
+72 490 451 20 re
+S
+BT
+/F1 9 Tf
+80 495 Td
+(Output) Tj
+ET
+1 w
+80 450 300 30 re
+S
+BT
+/F1 8 Tf
+90 460 Td
+(Target) Tj
+ET
+1 w
+80 400 300 30 re
+S
+BT
+/F1 8 Tf
+90 410 Td
+(Residual) Tj
+ET
+1 w
+400 410 110 40 re
+S
+BT
+/F1 9 Tf
+430 430 Td
+(Export) Tj
+ET
+BT
+/F1 16 Tf
+72 300 Td
+(4. Best-Practice Workflow / Best Practice / Flux recommand) Tj
+ET
+BT
+/F1 11 Tf
+72 270 Td
+(EN: Use short test runs with small chunks to validate quality.) Tj
+0 -14 Td
+(DE: Kurze Testlufe mit kleinen Chunks zur Qualittskontrolle.) Tj
+0 -14 Td
+(FR: Lancer des tests courts avec petits chunks pour valider la qualit.) Tj
+0 -14 Td
+(EN: Place markers at clear events \(vocals, drums, speech\).) Tj
+0 -14 Td
+(DE: Marker an klaren Ereignissen setzen \(Vocals, Drums, Sprache\).) Tj
+0 -14 Td
+(FR: Placer des marqueurs sur des vnements clairs \(voix, drums, parole\).) Tj
+0 -14 Td
+(EN: Use anchors for repeating passages to improve consistency.) Tj
+0 -14 Td
+(DE: Anchors fr wiederkehrende Passagen nutzen.) Tj
+0 -14 Td
+(FR: Utiliser des anchors pour les passages rpts.) Tj
+ET
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 7 0 R /Resources << /Font << /F1 2 0 R >> >> >>
+endobj
+9 0 obj
+<< /Length 2155 >>
+stream
+BT
+/F1 16 Tf
+72 770 Td
+(5. AudioFX Plugins / AudioFX-Plugins / Plugins AudioFX) Tj
+ET
+BT
+/F1 11 Tf
+72 740 Td
+(EN: AudioFX load from 'plugins/' and are stored per stream \(input/target/residual\).) Tj
+0 -14 Td
+(DE: AudioFX werden aus 'plugins/' geladen, pro Stream gespeichert.) Tj
+0 -14 Td
+(FR: Les AudioFX se chargent depuis 'plugins/' et se mmorisent par flux.) Tj
+ET
+BT
+/F1 16 Tf
+72 660 Td
+(6. Models & Offline / Modelle & Offline / Modles et hors-ligne) Tj
+ET
+BT
+/F1 11 Tf
+72 630 Td
+(EN: Model list is pulled from facebook/sam-audio and marked \(local/online\).) Tj
+0 -14 Td
+(DE: Modellliste kommt von facebook/sam-audio und ist \(local/online\) markiert.) Tj
+0 -14 Td
+(FR: La liste vient de facebook/sam-audio et est marque \(local/online\).) Tj
+0 -14 Td
+(EN: Offline uses a small fallback list.) Tj
+0 -14 Td
+(DE: Offline wird eine kleine Fallback-Liste genutzt.) Tj
+0 -14 Td
+(FR: Hors-ligne, une liste minimale est utilise.) Tj
+ET
+BT
+/F1 16 Tf
+72 550 Td
+(7. Export & QA / Export & Qualitt / Export et contrle qualit) Tj
+ET
+BT
+/F1 11 Tf
+72 520 Td
+(EN: Export target/residual WAV and check peaks/clipping.) Tj
+0 -14 Td
+(DE: Target/Residual als WAV exportieren, Peaks/Clipping prfen.) Tj
+0 -14 Td
+(FR: Exporter target/residual en WAV, vrifier les pics/clipping.) Tj
+0 -14 Td
+(EN: Document model and chunk parameters for repeatability.) Tj
+0 -14 Td
+(DE: Modell und Chunking-Parameter dokumentieren.) Tj
+0 -14 Td
+(FR: Documenter le modle et les paramtres de chunking.) Tj
+ET
+BT
+/F1 16 Tf
+72 440 Td
+(8. Troubleshooting / Fehlerbehebung / Dpannage) Tj
+ET
+BT
+/F1 11 Tf
+72 410 Td
+(EN: No audio: select output device; test short WAV.) Tj
+0 -14 Td
+(DE: Kein Audio: anderes Ausgabegert whlen; kurze WAV testen.) Tj
+0 -14 Td
+(FR: Pas d'audio : choisir un autre priphrique ; tester un WAV court.) Tj
+0 -14 Td
+(EN: CUDA not used: set device to 'cuda' and verify drivers.) Tj
+0 -14 Td
+(DE: CUDA nicht aktiv: Device auf 'cuda' stellen, Treiber prfen.) Tj
+0 -14 Td
+(FR: CUDA inactif : device sur 'cuda', vrifier les pilotes.) Tj
+ET
+BT
+/F1 12 Tf
+72 330 Td
+(Support) Tj
+ET
+BT
+/F1 11 Tf
+72 312 Td
+(EN/DE/FR: See README.md and docs/ for details.) Tj
+ET
+endstream
+endobj
+10 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 9 0 R /Resources << /Font << /F1 2 0 R >> >> >>
+endobj
+11 0 obj
+<< /Type /Pages /Kids [ 4 0 R 6 0 R 8 0 R 10 0 R ] /Count 4 >>
+endobj
+xref
+0 12
+0000000000 65535 f 
+0000000009 00000 n 
+0000000059 00000 n 
+0000000129 00000 n 
+0000002151 00000 n 
+0000002277 00000 n 
+0000004299 00000 n 
+0000004425 00000 n 
+0000006396 00000 n 
+0000006522 00000 n 
+0000008728 00000 n 
+0000008855 00000 n 
+trailer
+<< /Size 12 /Root 1 0 R >>
+startxref
+8934
+%%EOF
