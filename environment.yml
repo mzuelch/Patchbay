@@ -151,7 +151,8 @@ dependencies:
   - huggingface-hub==0.36.0
   - humanize==4.15.0
   - idna==3.11
-  - imagebind==0.1.0
+  # `imagebind` currently only publishes `0.0.1.dev0` on PyPI.
+  - imagebind==0.0.1.dev0
   - importlib-resources==6.5.2
   - inquirerpy==0.3.4
   - iopath==0.1.10
