@@ -115,7 +115,9 @@ dependencies:
   - colorama==0.4.6
   - contourpy==1.3.3
   - cycler==0.12.1
-  - dacvae==1.0.0
+  # `dacvae` is not published on PyPI; this is the package that provides the
+  # same Descript DAC VAE implementation.
+  - descript-audio-codec==1.0.0
   - dataproperty==1.1.0
   - datasets==4.4.2
   - datatrove==0.3.0
