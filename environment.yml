@@ -245,8 +245,10 @@ dependencies:
   - rouge-score==0.1.2
   - sacrebleu==2.6.0
   - safetensors==0.7.0
-  - sam-audio==0.1.0
-  - samaudio-backend==0.1.0
+  # NOTE:
+  # `sam-audio`/`samaudio-backend` wheels are not published for this env.
+  # The app imports `sam_audio` at runtime when running model inference.
+  # Keep these out of the base solve so `conda env create` succeeds.
   - scikit-learn==1.8.0
   - scipy==1.17.0
   - sentencepiece==0.2.1
