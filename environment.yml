@@ -201,7 +201,8 @@ dependencies:
   - parso==0.8.5
   - pathvalidate==3.3.1
   - peft==0.18.1
-  - perception-models==1.0.0
+  # `perception-models` has no published wheels/sdists on PyPI, which makes
+  # `conda env create -f environment.yml` fail during the pip phase.
   - pfzy==0.3.4
   - pillow==12.0.0
   - pip-tools==7.5.2
